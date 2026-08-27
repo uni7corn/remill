@@ -14,13 +14,30 @@
  * limitations under the License.
  */
 
-namespace {
+TEST_BEGIN(RDTSCbasic, 1)
+TEST_INPUTS(
+    0,
+    1,
+    0x12345678,
+    0xFFFFFFFF)
 
-DEF_SEM(DoXGETBV, PC) {
-  state.addr_to_load = ZExtTo<uint64_t>(Read(REG_ECX));
-  return __remill_sync_hyper_call(state, memory, SyncHyperCall::kX86XGetBV);
-}
+    rdtsc
+    mov RET_32, ARG1_32
+    mov edx, ARG1_32
+TEST_END
 
-}  // namespace
+TEST_BEGIN_64(RDTSCzeroExt_64, 1)
+TEST_IGNORE_FLAGS(OF SF ZF AF PF CF)
+TEST_INPUTS(
+    0,
+    1,
+    0x12345678,
+    0xFFFFFFFF)
 
-DEF_ISEL(XGETBV) = DoXGETBV;
+    mov rax, 0xFFFFFFFFFFFFFFFF
+    mov rdx, 0xFFFFFFFFFFFFFFFF
+    rdtsc
+    shr rax, 32
+    shr rdx, 32
+    mov RET_64, rax
+TEST_END_64

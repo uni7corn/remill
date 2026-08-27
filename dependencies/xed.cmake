@@ -23,6 +23,37 @@ set(MFILE_ARGS
     "--compiler=${compiler}"
 )
 
+# XED is built by mbuild, not CMake, so it does not honor
+# CMAKE_MSVC_RUNTIME_LIBRARY. mbuild also ties "--static" to /MT by default.
+# Dna.LLVMInterop and the CMake-built dependencies use the DLL CRT (/MD), so
+# disable mbuild's implicit CRT flag and pass the matching MSVC runtime flag
+# explicitly. Without this, xed.lib/xed-ild.lib embed /DEFAULTLIB:libcmt.lib
+# and the Dna.LLVMInterop link emits LNK4098.
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows" AND MSVC)
+    set(xed_msvc_runtime_flag "")
+    if(DEFINED CMAKE_MSVC_RUNTIME_LIBRARY AND NOT CMAKE_MSVC_RUNTIME_LIBRARY STREQUAL "")
+        if(CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "DebugDLL$")
+            set(xed_msvc_runtime_flag "/MDd")
+        elseif(CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "DLL$")
+            set(xed_msvc_runtime_flag "/MD")
+        elseif(CMAKE_MSVC_RUNTIME_LIBRARY MATCHES "Debug$")
+            set(xed_msvc_runtime_flag "/MTd")
+        else()
+            set(xed_msvc_runtime_flag "/MT")
+        endif()
+    elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        set(xed_msvc_runtime_flag "/MDd")
+    else()
+        set(xed_msvc_runtime_flag "/MD")
+    endif()
+
+    list(APPEND MFILE_ARGS
+        "--no-mscrt"
+        "--extra-ccflags=${xed_msvc_runtime_flag}"
+        "--extra-cxxflags=${xed_msvc_runtime_flag}"
+    )
+endif()
+
 if(CMAKE_OSX_SYSROOT)
     list(APPEND MFILE_ARGS "--extra-ccflags=-isysroot ${CMAKE_OSX_SYSROOT}")
     list(APPEND MFILE_ARGS "--extra-cxxflags=-isysroot ${CMAKE_OSX_SYSROOT}")
@@ -85,4 +116,4 @@ ExternalProject_Add(xed
 )
 
 # TODO: generate XEDVersion.cmake as well file
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/XEDConfig.cmake.in" "${CMAKE_INSTALL_PREFIX}/lib/cmake/XED/XEDConfig.cmake" @ONLY)
+configure_file("${CMAKE_CURRENT_LIST_DIR}/XEDConfig.cmake.in" "${CMAKE_INSTALL_PREFIX}/lib/cmake/XED/XEDConfig.cmake" @ONLY)

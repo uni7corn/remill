@@ -14,13 +14,22 @@
  * limitations under the License.
  */
 
-namespace {
+TEST_BEGIN(JAEr32, 2)
+TEST_INPUTS(
+    0, 0,
+    1, 0,
+    0, 1,
+    0x12345678, 0x12345678,
+    0xFFFFFFFF, 0x7FFFFFFF)
 
-DEF_SEM(DoXGETBV, PC) {
-  state.addr_to_load = ZExtTo<uint64_t>(Read(REG_ECX));
-  return __remill_sync_hyper_call(state, memory, SyncHyperCall::kX86XGetBV);
-}
-
-}  // namespace
-
-DEF_ISEL(XGETBV) = DoXGETBV;
+    mov eax, ARG1_32
+    cmp eax, ARG2_32
+    mov RET_32, 0
+    jae jae_taken1
+    mov RET_32, 1
+    jmp jae_done1
+jae_taken1:
+    mov RET_32, 2
+jae_done1:
+    nop
+TEST_END

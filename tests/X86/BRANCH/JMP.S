@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-namespace {
+TEST_BEGIN(JMPrel, 1)
+TEST_INPUTS(
+    0,
+    1,
+    0x12345678,
+    0xFFFFFFFF)
 
-DEF_SEM(DoXGETBV, PC) {
-  state.addr_to_load = ZExtTo<uint64_t>(Read(REG_ECX));
-  return __remill_sync_hyper_call(state, memory, SyncHyperCall::kX86XGetBV);
-}
-
-}  // namespace
-
-DEF_ISEL(XGETBV) = DoXGETBV;
+    jmp jmp_target1
+    mov RET_32, 0xDEADBEEF
+jmp_target1:
+    mov RET_32, ARG1_32
+TEST_END

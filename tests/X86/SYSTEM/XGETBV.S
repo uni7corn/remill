@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-namespace {
+TEST_BEGIN(XGETBVxcr0, 1)
+TEST_INPUTS(0)
 
-DEF_SEM(DoXGETBV, PC) {
-  state.addr_to_load = ZExtTo<uint64_t>(Read(REG_ECX));
-  return __remill_sync_hyper_call(state, memory, SyncHyperCall::kX86XGetBV);
-}
+    mov eax, 0x00000001
+    cpuid
+    mov ebx, ecx
+    and ebx, 0x0C000000
+    cmp ebx, 0x0C000000
+    jne xgetbv_nop1
 
-}  // namespace
+    xor ecx, ecx
+    xgetbv
 
-DEF_ISEL(XGETBV) = DoXGETBV;
+xgetbv_nop1: nop
+TEST_END
